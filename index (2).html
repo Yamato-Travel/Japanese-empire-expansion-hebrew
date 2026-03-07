@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>עליית האימפריה היפנית — 1894–1942</title>
+
+<meta property="og:title" content="עליית האימפריה היפנית 1868–1942" />
+<meta property="og:description" content="מפה אינטראקטיבית של התפשטות האימפריה היפנית — מרפורמת מייג'י ועד שיא הכיבוש במלחמת האוקיינוס השקט" />
+<meta property="og:image" content="https://yamato-travel.github.io/klook-landing/FUJI%20DAY%20TOUR.webp" />
+<meta property="og:url" content="https://yamato-travel.com" />
+<meta property="og:type" content="website" />
+<meta property="og:locale" content="he_IL" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="עליית האימפריה היפנית 1868–1942" />
+<meta name="twitter:image" content="https://yamato-travel.github.io/klook-landing/FUJI%20DAY%20TOUR.webp" />
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Frank+Ruhl+Libre:wght@400;700;900&family=Noto+Serif+JP:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --deep:    #070504;
+  --panel:   rgba(8,4,2,0.93);
+  --border:  #6b2800;
+  --border2: #9b3800;
+  --accent:  #c83000;
+  --gold:    #d4a520;
+  --text:    #e0c890;
+  --muted:   #907050;
+
+  --c0: #8b1a00;
+  --c1: #b82200;
+  --c2: #d43500;
+  --c3: #e05500;
+  --c4: #e87a00;
+  --c5: #e89800;
+  --c6: #d4b800;
+}
+
+html, body { height:100%; overflow:hidden; }
+
+body {
+  background: var(--deep);
+  font-family: 'Frank Ruhl Libre', serif;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER ── */
+header {
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #130800 0%, #0d0500 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 0 20px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 1000;
+  gap: 16px;
+}
+
+header::after {
+  content:'';
+  position:absolute; bottom:-1px; left:0; right:0; height:1px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--gold), var(--accent), transparent);
+}
+
+.header-emblem { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.rising-sun-svg { width:52px; height:52px; }
+
+.header-center { text-align:center; flex:1; }
+
+.header-center h1 {
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: clamp(0.9rem, 2vw, 1.3rem);
+  font-weight: 900;
+  color: #f0d888;
+  letter-spacing: 0.05em;
+  text-shadow: 0 0 30px rgba(200,80,0,0.7), 0 2px 4px rgba(0,0,0,0.8);
+}
+
+.header-center .sub {
+  font-size: clamp(0.62rem, 1.1vw, 0.78rem);
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  margin-top: 3px;
+}
+
+.jp-kanji {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 1.1rem;
+  color: var(--accent);
+  opacity:0.9;
+  flex-shrink:0;
+  text-shadow: 0 0 12px rgba(200,50,0,0.6);
+  text-align: center;
+}
+
+/* ── MAP ── */
+#map { flex:1; position:relative; }
+
+.leaflet-tile-pane {
+  filter: sepia(0.85) saturate(0.3) brightness(0.38) hue-rotate(5deg);
+}
+
+/* ── TIMELINE ── */
+#timeline {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 16px 14px;
+  width: min(860px, 96vw);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.7);
+  direction: rtl;
+}
+
+#timeline::before {
+  content:'ציר זמן — לחץ לבחירת שלב';
+  display:block;
+  text-align:center;
+  font-family:'Frank Ruhl Libre',serif;
+  font-size:0.65rem;
+  letter-spacing:0.2em;
+  color: var(--muted);
+  margin-bottom:9px;
+}
+
+.tl-track {
+  display:flex;
+  align-items:stretch;
+  gap:3px;
+  position:relative;
+  direction: rtl;
+}
+
+.tl-track::before {
+  content:'';
+  position:absolute;
+  top:50%; left:0; right:0; height:1px;
+  background: linear-gradient(90deg, var(--border), var(--border2), var(--border));
+  transform:translateY(-50%);
+  z-index:0;
+}
+
+.phase-btn {
+  flex:1;
+  background: rgba(60,20,0,0.5);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 8px 6px 6px;
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: clamp(0.5rem, 0.9vw, 0.68rem);
+  cursor: pointer;
+  border-radius: 5px;
+  transition: all 0.22s;
+  text-align: center;
+  position: relative;
+  z-index:1;
+  line-height:1.35;
+}
+
+.phase-btn .yr {
+  display:block;
+  font-size: clamp(0.58rem, 1vw, 0.72rem);
+  font-weight:700;
+  color: var(--gold);
+  margin-bottom:2px;
+  font-family: 'Cinzel', serif;
+}
+
+.phase-btn:hover {
+  background: rgba(120,40,0,0.65);
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.phase-btn.active {
+  background: linear-gradient(135deg, rgba(160,50,0,0.85), rgba(100,30,0,0.9));
+  border-color: var(--gold);
+  color: #ffe8a0;
+  box-shadow: 0 0 16px rgba(200,80,0,0.45), inset 0 1px 0 rgba(255,200,0,0.15);
+}
+
+.phase-btn.active .yr { color:#fff8c0; }
+
+/* ── LEGEND TOGGLE BUTTON ── */
+#legendToggle {
+  position: fixed;
+  bottom: 110px; left: 14px;
+  z-index: 1001;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 7px 14px;
+  color: var(--gold);
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  direction: rtl;
+  letter-spacing: 0.05em;
+}
+#legendToggle:hover {
+  background: rgba(120,40,0,0.7);
+  border-color: var(--gold);
+}
+#legendToggle .arrow { font-size:0.7rem; transition: transform 0.25s; }
+#legendToggle.open .arrow { transform: rotate(180deg); }
+
+/* ── LEGEND PANEL ── */
+#legend {
+  position:fixed;
+  bottom: 148px; left:14px;
+  z-index:1000;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 13px 15px;
+  min-width: 210px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  direction: rtl;
+  display: none;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn {
+  from { opacity:0; transform:translateY(6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+#legend h3 {
+  font-family:'Frank Ruhl Libre',serif;
+  font-size:0.7rem;
+  letter-spacing:0.18em;
+  color:var(--muted);
+  text-align:center;
+  margin-bottom:10px;
+  padding-bottom:8px;
+  border-bottom:1px solid var(--border);
+}
+
+.li {
+  display:flex; align-items:center; gap:9px;
+  margin-bottom:6px;
+  font-size:0.76rem;
+  color: #c8a870;
+  font-family:'Frank Ruhl Libre',serif;
+  flex-direction: row-reverse;
+  text-align: right;
+}
+
+.li-swatch {
+  width:20px; height:13px; border-radius:3px; flex-shrink:0;
+  border:1px solid rgba(255,255,255,0.12);
+}
+
+.li-dot {
+  width:10px; height:10px; border-radius:50%; flex-shrink:0;
+  border:1px solid rgba(255,255,255,0.2);
+}
+
+/* ── INFO BOX ── */
+#infoBox {
+  position:absolute;
+  top:14px; right:14px;
+  z-index:1000;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius:9px;
+  padding:14px 16px;
+  max-width:255px;
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+  backdrop-filter:blur(10px);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  transition: all 0.3s ease;
+  direction: rtl;
+  text-align: right;
+}
+
+.info-era {
+  font-family:'Frank Ruhl Libre',serif;
+  font-size:0.6rem;
+  letter-spacing:0.15em;
+  color:var(--accent);
+  margin-bottom:6px;
+  display:block;
+  font-weight:700;
+}
+
+#infoBox h3 {
+  font-family:'Frank Ruhl Libre',serif;
+  font-size:0.95rem;
+  font-weight:900;
+  color: #f0d070;
+  margin-bottom:7px;
+  line-height:1.3;
+}
+
+#infoBox p {
+  font-size:0.8rem;
+  color:#b89060;
+  line-height:1.6;
+}
+
+.stat-row {
+  display:flex; gap:10px; margin-top:9px;
+  padding-top:8px;
+  border-top:1px solid rgba(100,40,0,0.5);
+  direction: ltr;
+}
+
+.stat { flex:1; text-align:center; }
+
+.stat-val {
+  display:block;
+  font-family:'Cinzel',serif;
+  font-size:0.82rem;
+  font-weight:700;
+  color:var(--gold);
+}
+
+.stat-lab {
+  font-size:0.58rem;
+  color:var(--muted);
+  letter-spacing:0.08em;
+  font-family:'Frank Ruhl Libre',serif;
+}
+
+/* ── BATTLE MARKER PULSE ── */
+@keyframes battlePulse {
+  0%   { transform: scale(1);   opacity: 1; box-shadow: 0 0 8px currentColor, 0 0 16px currentColor; }
+  50%  { transform: scale(1.7); opacity: 0.8; box-shadow: 0 0 16px currentColor, 0 0 32px currentColor, 0 0 48px currentColor; }
+  100% { transform: scale(1);   opacity: 1; box-shadow: 0 0 8px currentColor, 0 0 16px currentColor; }
+}
+.battle-pulse div {
+  animation: battlePulse 1.2s ease-in-out infinite !important;
+}
+
+/* ── AREA SPOTLIGHT LABEL ── */
+.area-spotlight {
+  background: linear-gradient(135deg, rgba(160,50,0,0.92), rgba(80,20,0,0.95));
+  border: 1px solid #d4a520;
+  border-radius: 6px;
+  color: #fff8d0;
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 5px 12px;
+  white-space: nowrap;
+  direction: rtl;
+  box-shadow: 0 0 20px rgba(210,120,0,0.6), 0 2px 10px rgba(0,0,0,0.8);
+  animation: spotlightPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275) both;
+  pointer-events: none;
+}
+@keyframes spotlightPop {
+  from { opacity:0; transform: scale(0.6) translateY(8px); }
+  to   { opacity:1; transform: scale(1) translateY(0); }
+}
+
+/* ── MAP TOOLTIPS (place name labels) ── */
+.leaflet-tooltip.place-label {
+  background: rgba(6,2,0,0.82);
+  border: 1px solid rgba(180,80,0,0.55);
+  border-radius: 4px;
+  color: #f0d080;
+  font-family: 'Cinzel', serif;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 2px 6px;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.7);
+  pointer-events: none;
+}
+.leaflet-tooltip.place-label::before {
+  border-top-color: rgba(180,80,0,0.55) !important;
+}
+
+/* ── POPUPS ── */
+.leaflet-popup-close-button { display:none !important; }
+.leaflet-popup-content-wrapper {
+  background: rgba(12,5,0,0.96) !important;
+  border: 1px solid #8b2800 !important;
+  border-radius:7px !important;
+  font-family:'Frank Ruhl Libre',serif !important;
+}
+.popup-close {
+  float: left;
+  background: none;
+  border: none;
+  color: #907050;
+  font-size: 1.1rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 2px;
+  margin-right: 4px;
+}
+.popup-close:hover { color: #f0c040; }
+.leaflet-popup-content {
+  color:#e0c890 !important;
+  font-size:1.2rem !important;
+  line-height:1.6 !important;
+  margin:10px 14px !important;
+  direction: rtl !important;
+  text-align: right !important;
+}
+.leaflet-popup-content b {
+  font-family:'Frank Ruhl Libre',serif;
+  color:#f0c040;
+  font-size:1.35rem;
+  display:block;
+  margin-bottom:4px;
+  font-weight:900;
+}
+.leaflet-popup-content .ptag {
+  display:inline-block;
+  background:rgba(150,50,0,0.5);
+  border:1px solid #8b2800;
+  color:#ffcc80;
+  font-size:0.85rem;
+  padding:1px 7px;
+  border-radius:3px;
+  margin-bottom:5px;
+  font-family:'Cinzel',serif;
+  letter-spacing:0.1em;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-emblem">
+    <svg class="rising-sun-svg" viewBox="0 0 110 110" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="sunGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#ff6600"/>
+          <stop offset="100%" stop-color="#cc2000"/>
+        </radialGradient>
+      </defs>
+      <g transform="translate(55,55)">
+        <g stroke="#cc2200" stroke-width="2.5" opacity="0.65">
+          <line x1="0" y1="-50" x2="0" y2="-28"/>
+          <line x1="0" y1="50" x2="0" y2="28"/>
+          <line x1="-50" y1="0" x2="-28" y2="0"/>
+          <line x1="50" y1="0" x2="28" y2="0"/>
+          <line x1="-35" y1="-35" x2="-20" y2="-20"/>
+          <line x1="35" y1="-35" x2="20" y2="-20"/>
+          <line x1="-35" y1="35" x2="-20" y2="20"/>
+          <line x1="35" y1="35" x2="20" y2="20"/>
+          <line x1="-47" y1="-18" x2="-26" y2="-10"/>
+          <line x1="47" y1="-18" x2="26" y2="-10"/>
+          <line x1="-47" y1="18" x2="-26" y2="10"/>
+          <line x1="47" y1="18" x2="26" y2="10"/>
+          <line x1="-18" y1="-47" x2="-10" y2="-26"/>
+          <line x1="18" y1="-47" x2="10" y2="-26"/>
+          <line x1="-18" y1="47" x2="-10" y2="26"/>
+          <line x1="18" y1="47" x2="10" y2="26"/>
+        </g>
+        <circle r="22" fill="url(#sunGrad)"/>
+        <circle r="20" fill="none" stroke="#ff8844" stroke-width="0.8" opacity="0.5"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="header-center">
+    <h1>עליית האימפריה היפנית — מתקופת מייג'י עד שיא הכיבוש</h1>
+    <div class="sub">שחזור אינטראקטיבי · 1868 – 1942</div>
+  </div>
+
+  <div class="jp-kanji">大日本帝国<br><span style="font-size:0.6rem;color:#806040;font-family:'Frank Ruhl Libre',serif;">דאי-ניפון טייקוקו</span></div>
+</header>
+
+<div id="map"></div>
+
+<!-- LEGEND TOGGLE -->
+<button id="legendToggle" onclick="toggleLegend()">
+  <span>מקרא</span><span class="arrow">▲</span>
+</button>
+
+<!-- LEGEND PANEL -->
+<div id="legend">
+  <h3>מקרא</h3>
+  <div class="li"><div class="li-swatch" style="background:var(--c0)"></div>האיים הראשיים (לפני 1894)</div>
+  <div class="li"><div class="li-swatch" style="background:var(--c1)"></div>רכישות ממלחמת סין-יפן (1895)</div>
+  <div class="li"><div class="li-swatch" style="background:var(--c2)"></div>רכישות ממלחמת רוסיה-יפן (1905)</div>
+  <div class="li"><div class="li-swatch" style="background:var(--c3)"></div>סיפוח קוריאה ורכישות מלחמת העולם א' (1910–1920)</div>
+  <div class="li"><div class="li-swatch" style="background:var(--c4)"></div>מנצ'וריה וצפון סין (1931–1937)</div>
+  <div class="li"><div class="li-swatch" style="background:var(--c5)"></div>כיבושי מלחמת סין (1937–1941)</div>
+  <div class="li"><div class="li-swatch" style="background:var(--c6);opacity:0.8"></div>שיא ההתפשטות — מלחמת האוקיינוס השקט (1942)</div>
+  <div style="height:6px"></div>
+  <div class="li"><div class="li-dot" style="background:#ff2200"></div>קרב / אירוע מרכזי</div>
+  <div class="li"><div class="li-dot" style="background:#ffaa00"></div>אתר אסטרטגי</div>
+</div>
+
+<!-- INFO BOX -->
+<div id="infoBox">
+  <span class="info-era">בחר שלב בציר הזמן</span>
+  <h3>האימפריה היפנית</h3>
+  <p>לחץ על אחד מהכפתורים בציר הזמן למטה כדי לעקוב אחר שלבי עלייתה של האימפריה — מהרפורמה המייג'ית ועד לשיא הכיבוש ב-1942.</p>
+</div>
+
+<!-- TIMELINE -->
+<div id="timeline">
+  <div class="tl-track" id="tlTrack"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// MAP INIT
+// ═══════════════════════════════════════════════════════════════
+const map = L.map('map', {
+  center: [18, 130],
+  zoom: 3,
+  minZoom: 2,
+  maxZoom: 7,
+  zoomControl: true,
+  attributionControl: false
+});
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19
+}).addTo(map);
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+function poly(coords, color, op, tip) {
+  return L.polygon(coords, {
+    color, weight: 1.2,
+    fillColor: color, fillOpacity: op, opacity: 0.9
+  }).bindPopup(tip);
+}
+
+function circ(lat, lng, radius, color, op, tip) {
+  return L.circle([lat, lng], {
+    radius, color, weight: 1.2,
+    fillColor: color, fillOpacity: op
+  }).bindPopup(tip);
+}
+
+function popup(tag, title, body) {
+  return `<button class="popup-close" onclick="map.closePopup()">✕</button><span class="ptag">${tag}</span><b>${title}</b>${body}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LAYERS (map labels in English, popup text in Hebrew)
+// ═══════════════════════════════════════════════════════════════
+
+const L0 = L.layerGroup([
+  poly([[31,129],[33,130.5],[35,133],[36,136],[37,137],[38,141],[40,141],
+        [41,140],[43,141],[44,142],[44,145],[42,145],[38,142],[36,136],
+        [34,132],[32,130],[31,129]],
+    '#8b1a00', 0.88,
+    popup('שטח מרכזי','Japanese Home Islands — האיים הראשיים',
+      'ארבעת האיים הגדולים — הונשו, קיושו, שיקוקו, הוקאידו.<br>רפורמת מייג\'י (1868) הפכה את יפן בתוך דור אחד למעצמה תעשייתית מודרנית עם צבא, חיל ים וחוקה.')),
+
+  poly([[24,123],[24,124],[25,124],[27,128],[26,128],[25,126],[24,123]],
+    '#8b1a00', 0.85,
+    popup('סופח 1879','Ryukyu Islands (Okinawa) — איי ריוקיו',
+      'סופח בתקופת מייג\'י, תוך סיום ממלכת ריוקיו העצמאית.')),
+]);
+
+const L1 = L.layerGroup([
+  poly([[22,120],[22,121],[23,121],[25,122],[25,121],[23,120],[22,120]],
+    '#b82200', 0.85,
+    popup('נרכש 1895','Taiwan (Formosa) — טייוואן',
+      'ניתנה לידי יפן על ידי סין לאחר תבוסה מוחצת במלחמת סין-יפן הראשונה.<br>המ植民地 הראשונה של יפן מעבר לים — תבנית לכל הכיבושים הבאים.')),
+
+  poly([[21.9,120.6],[22.8,121.0],[23.6,119.6],[22.8,119.5],[21.9,120.6]],
+    '#b82200', 0.85,
+    popup('נרכש 1895','Penghu Islands — איי פנגחו (פסקדורס)',
+      'קבוצת איים אסטרטגית בין טייוואן לסין היבשתית, נמסרה יחד עם טייוואן ב-1895.')),
+]);
+
+const L2 = L.layerGroup([
+  poly([[46,141.5],[46,143],[48,143],[50,143],[50,141.5],[48,141.5],[46,141.5]],
+    '#d43500', 0.82,
+    popup('נרכש 1905','South Sakhalin (Karafuto) — דרום סחלין',
+      'נכבש מרוסיה לאחר ניצחון ימי מדהים בקרב מצר צושימה.<br>לראשונה בהיסטוריה המודרנית מדינה אסיאתית הביסה מעצמה אירופאית גדולה.')),
+
+  circ(42.8, 131.9, 100000, '#d43500', 0.7,
+    popup('חכירה 1905','Kwantung Leased Territory — חצי אי קוואנטונג',
+      'נמל ארתור ודאליין — נמלים אסטרטגיים חמים על חצי האי לייאודונג.<br>חוכר מסין, לשעבר בידי רוסיה. בסיס הארמייה הקוואנטונגית שתשחק תפקיד מרכזי בהמשך.')),
+
+  circ(7.4, 151.8, 380000, '#d43500', 0.55,
+    popup('מנדט 1905–1920','Micronesian Islands — איי מיקרונזיה (לשעבר גרמניים)',
+      'שטחים פסיפיים גרמניים לשעבר שהוענקו ליפן כמנדט חבר הלאומים.<br>כוללים את איי קרולינה, מרשל ומריאנה — יהפכו לבסיסים ימיים מרכזיים.')),
+]);
+
+const L3 = L.layerGroup([
+  poly([[34,126],[34,128],[35,129],[37,129],[38,128],[38,126],[37,125],[35,126],[34,126]],
+    '#e05500', 0.82,
+    popup('סופח 1910','Korea (Chosun) — קוריאה (צ\'וסון)',
+      'סופחה רשמית לאחר שנות מניפולציה פוליטית, תוך סיום שושלת צ\'וסון בת 500 השנה.<br>שלטון יפני של 35 שנה — תקופה של דיכוי תרבותי ועבודת כפייה.')),
+
+  circ(52.3, 158.7, 250000, '#e05500', 0.5,
+    popup('השפעה 1905–1920','Northern Pacific Sphere — ספרת ההשפעה הצפונית',
+      'יפן הרחיבה סיורי ים והשפעה לצפון האוקיינוס השקט לאחר מלחמת העולם הראשונה.')),
+]);
+
+const L4 = L.layerGroup([
+  poly([[38,120],[40,121],[42,122],[44,126],[48,128],[50,130],[52,134],[53,135],
+        [52,140],[50,141.5],[46,141.5],[44,131],[42,128],[40,124],[38,122],[38,120]],
+    '#e87a00', 0.75,
+    popup('כבוש 1931–32','Manchuria (Manchukuo) — מנצ\'וריה (מנצ\'וקו)',
+      '<b>אירוע מוקדן</b> — קצינים יפנים בדו פיצוץ על מסילת הרכבת כדי לספק תירוץ לפלישה.<br>מדינת בובה תחת הקיסר פו-יי. כ-30 מיליון תושבים. יפן פרשה מחבר הלאומים.')),
+
+  poly([[40,117],[40,119],[41,120],[42,120],[42,118],[41,117],[40,117]],
+    '#e87a00', 0.72,
+    popup('נכבש 1933','Rehe (Jehol) — מחוז ג\'הול',
+      'הצטרף למנצ\'וקו, דחף את גבול יפן קרוב יותר לבייג\'ינג.')),
+
+  poly([[38,114],[39,117],[40,117],[39,116],[38,115],[38,114]],
+    '#e87a00', 0.65,
+    popup('כבוש 1935','Demilitarized Zone — אזור מפורז',
+      'המועצה הפוליטית חהאבי-צ\'האר — "כרית הביטחון" של יפן מדרום למנצ\'וריה.')),
+]);
+
+const L5 = L.layerGroup([
+  poly([[32,107],[34,107],[36,108],[38,115],[40,117],[40,119],[39,121],[37,122],
+        [35,120],[33,120],[31,121],[30,120],[28,117],[27,115],[26,113],[27,110],
+        [28,108],[30,108],[32,107]],
+    '#e89800', 0.68,
+    popup('כבוש 1937–41','Central & North China — מרכז וצפון סין',
+      '"אירוע גשר מרקו פולו" (7 יולי 1937) — קרב קטן שהתפוצץ למלחמה מלאה.<br>בייג\'ינג, שנחאי ונאנג\'ינג נפלו תוך חודשים.<br>טבח נאנג\'ינג — עד 300,000 אזרחים נהרגו. העולם נזעק.')),
+
+  poly([[21,110],[21,112],[22,113],[23,114],[23,112],[22,110],[21,110]],
+    '#e89800', 0.68,
+    popup('כבוש 1938','Guangzhou (Canton) — גואנגג\'ואו (קנטון)',
+      'עיר נמל מרכזית שנפלה ב-1938, תוך ניתוק קווי האספקה הלאומניים מהדרום.')),
+
+  poly([[18,109],[18,111],[20,111],[20,109],[18,109]],
+    '#e89800', 0.65,
+    popup('כבוש 1939','Hainan Island — אי האינאן',
+      'חיוני אסטרטגית — שימש כבסיס להשלכת כוח לדרום מזרח אסיה ולאיום על אינדו-סין הצרפתית.')),
+
+  poly([[8,100],[10,102],[12,107],[14,108],[16,108],[17,107],[20,104],[22,104],
+        [22,102],[20,100],[18,100],[16,101],[14,100],[12,99],[10,99],[8,100]],
+    '#e89800', 0.62,
+    popup('כבוש 1940–41','French Indochina — אינדו-סין הצרפתית',
+      'נכבשה בהסכמת ממשלת וישי הצרפתית.<br>וייטנאם, לאוס, קמבודיה — קרש הקפיצה להתקפה על דרום מזרח אסיה.')),
+]);
+
+const L6 = L.layerGroup([
+  poly([[10,98],[13,99],[16,100],[18,100],[22,98],[24,97],[26,96],[27,97],
+        [24,93],[22,92],[20,92],[18,94],[16,96],[14,97],[12,98],[10,98]],
+    '#d4b800', 0.6,
+    popup('נכבש 1942','Burma — בורמה',
+      'נפלה עד מאי 1942, תוך חיתוך "כביש בורמה" — קו האספקה האחרון של סין.<br>יפן עמדה על סף הודו הבריטית.')),
+
+  poly([[1.3,103.5],[1.5,104],[2,104],[3,103],[4,103],[5,102],[6,100],
+        [5,100],[4,100],[3,101],[2,102],[1.3,103.5]],
+    '#d4b800', 0.62,
+    popup('נכבש פב׳ 1942','Malaya & Singapore — מלאיה וסינגפור',
+      '"גיברלטר של המזרח" נפל ב-15 פברואר 1942.<br>85,000 חיילים בריטיים וחבר הלאומים נכנעו. צ\'רצ\'יל קרא לזה "האסון החמור ביותר בהיסטוריה הבריטית."')),
+
+  poly([[5,117],[7,118],[9,118],[11,122],[13,122],[14,121],[16,120],[18,122],
+        [20,122],[20,119],[16,119],[14,118],[12,120],[10,119],[8,116],[6,115],[5,117]],
+    '#d4b800', 0.62,
+    popup('נכבש 1942','The Philippines — הפיליפינים',
+      'הגנרל מק\'ארתור נסוג בהבטיחו "אחזור." צעדת המוות של בטאאן — 60,000–80,000 שבויים מנו תחת תנאים נוראים.')),
+
+  poly([[-8,95],[-5,95],[-2,96],[0,100],[2,104],[3,108],[1,108],
+        [-2,108],[-5,105],[-7,107],[-8,114],[-9,118],[-10,120],
+        [-10,125],[-8,128],[-5,130],[-3,132],[-1,134],[0,134],
+        [-2,136],[-5,136],[-8,135],[-10,130],[-10,124],[-8,115],
+        [-7,108],[-5,103],[-2,102],[-5,98],[-8,95]],
+    '#d4b800', 0.58,
+    popup('נכבש תחילת 1942','Dutch East Indies — הודו המזרחית ההולנדית (אינדונזיה)',
+      'ארכיפלג ענק שנכבש בשל שדות הנפט החיוניים שלו.<br>הפרס האסטרטגי העיקרי של ההתקפה הדרומית — דלק למכונת המלחמה היפנית.')),
+
+  poly([[-1,132],[-1,141],[0,141],[-2,141],[-4,140],[-6,140],
+        [-8,138],[-8,132],[-6,132],[-4,130],[-2,130],[-1,132]],
+    '#d4b800', 0.58,
+    popup('כבוש 1942','New Guinea — גינאה החדשה',
+      'החוף הצפוני נכבש. ניסיון יפני לכבוש את פורט מורסבי דרך שביל קוקודה נעצר על ידי כוחות אוסטרלים — הצלת אוסטרליה מאיום ישיר.')),
+
+  circ(16.5, 145.5, 160000, '#d4b800', 0.6,
+    popup('מבוצר / מנדט','Mariana Islands — איי מריאנה',
+      'כולל סייפן, טיניאן וגואם. גואם נכבשה ב-10 דצמבר 1941.<br>מאוחר יותר — בסיס המריבה לפצצות ה-B-29 שהפציצו את יפן.')),
+
+  circ(7.5, 151, 380000, '#d4b800', 0.5,
+    popup('בסיס מבצעים','Caroline Islands — איי קרולינה',
+      'לגון טרוק — "גיברלטר של האוקיינוס השקט" ובסיס הים הראשי של יפן במרכז הפסיפיק.')),
+
+  circ(9, 168, 250000, '#d4b800', 0.5,
+    popup('שטח מנדט','Marshall Islands — איי מרשל',
+      'בסיסים יפניים מבוצרים. מאוחר יותר — זירת קרבות איים עזים של ארה"ב.')),
+
+  circ(19.3, 166.6, 90000, '#d4b800', 0.55,
+    popup('נכבש דצ׳ 1941','Wake Island — אי ווייק',
+      'נפל לאחר הגנה אמריקאית גיבורית. חיל מצב קטן של נחתים עמד 15 יום מול כוח עצום.')),
+
+  circ(-9, 160, 210000, '#d4b800', 0.52,
+    popup('שנוי במחלוקת 1942','Solomon Islands — איי שלמה',
+      'יפן החלה לבנות כאן שדה תעופה בגואדלקנל — שגרר קרב של שישה חודשים שהפך את גלגל המלחמה.')),
+
+  circ(-1, 172, 200000, '#d4b800', 0.5,
+    popup('נכבש 1941–42','Gilbert Islands — איי גילברט',
+      'נכבשו בתחילת המלחמה. זירת קרב טראווה (1943) — אחת מהסתערויות האיים הקשות ביותר בפסיפיק.')),
+
+  circ(52.9, 173.2, 170000, '#d4b800', 0.55,
+    popup('נכבש יונ׳ 1942','Aleutian Islands (Attu & Kiska) — האיים האלאוטיאניים',
+      'הכיבוש הצפוני ביותר של יפן — הכיבוש היחיד של שטח אמריקאי בצפון אמריקה במלחמת העולם השנייה.<br>בוצע בו-זמנית עם קרב מידוויי.')),
+
+  poly([[5,100],[6,101],[8,100],[10,99],[12,98],[14,99],[16,102],[18,103],
+        [20,101],[17,99],[15,98],[13,99],[10,98],[8,98],[6,99],[5,100]],
+    '#b89000', 0.38,
+    popup('מדינה בת-ברית','Thailand — תאילנד',
+      'חתמה על ברית צבאית עם יפן ב-21 דצמבר 1941 — אפשרה מעבר חופשי לכוחות.<br>הכריזה מלחמה על ארה"ב ובריטניה, אם כי ארה"ב לא הכריזה מלחמה על תאילנד.')),
+]);
+
+// ═══════════════════════════════════════════════════════════════
+// EVENT MARKERS
+// ═══════════════════════════════════════════════════════════════
+function mkIcon(c, sz=11) {
+  return L.divIcon({
+    html:`<div style="width:${sz}px;height:${sz}px;background:${c};border-radius:50%;border:2px solid rgba(255,255,255,0.5);box-shadow:0 0 8px ${c},0 0 16px ${c}55"></div>`,
+    className:'', iconAnchor:[sz/2,sz/2]
+  });
+}
+
+// tlabel = short English name shown as permanent label on map
+const battles = [
+  { phase:0, ll:[30.3,114.4],   c:'#ff3300', tlabel:'Yalu River 1894',     label:'קרב נהר יאלו 1894',             body:'הקרב הימי הראשי של מלחמת סין-יפן. ניצחון יפן הוכיח שמודרניזציית הצי הושלמה.' },
+  { phase:2, ll:[38.8,121.3],   c:'#ff4400', tlabel:'Port Arthur 1904',    label:'נמל ארתור 1904–05',              body:'מצור של 5 חודשים. האדמירל טוגו הכחיד את הצי הרוסי במצר צושימה — הלם את כל העולם.' },
+  { phase:4, ll:[41.8,123.4],   c:'#ff5500', tlabel:'Mukden 1931',         label:'אירוע מוקדן 1931',               body:'קצינים יפנים ביימו פיצוץ על מסילת הרכבת. תירוץ לכיבוש כל מנצ\'וריה תוך חודשים.' },
+  { phase:5, ll:[39.85,116.2],  c:'#ff6600', tlabel:'Beijing 1937',        label:'גשר מרקו פולו 1937',             body:'עימות קטן ב-7 יולי 1937 הסלים למלחמה כוללת בין יפן לסין — פתיחת מלחמת העולם השנייה באסיה.' },
+  { phase:5, ll:[32.06,118.8],  c:'#ff0000', tlabel:'Nanjing Massacre',    label:'טבח נאנג\'ינג 1937',             body:'לאחר נפילת העיר בדצמבר 1937, חיילים יפנים ביצעו זוועות על פני שישה שבועות. מוערך 200,000–300,000 אזרחים נהרגו.', sz:14 },
+  { phase:5, ll:[31.2,121.5],   c:'#ff5500', tlabel:'Shanghai 1937',       label:'נפילת שנחאי 1937',               body:'נכבשה נובמבר 1937 לאחר קרב עירוני קשה. מרכז המסחר הגדול של סין.' },
+  { phase:6, ll:[21.36,-157.97],c:'#ff0000', tlabel:'Pearl Harbor 1941',   label:'פרל הארבור — 7 דצמבר 1941',    body:'"תאריך שיחיה בקלון." המתקפה המפתיעה על הצי האמריקאי הכניסה את ארה"ב למלחמה. 2,403 אמריקאים נהרגו, 8 אוניות קרב שוקעו.', sz:14 },
+  { phase:6, ll:[1.35,103.8],   c:'#ffaa00', tlabel:'Singapore Feb.1942',  label:'נפילת סינגפור — פב\' 1942',      body:'85,000 חיילים בריטיים, הודים ואוסטרלים נכנעו. צ\'רצ\'יל: "האסון החמור ביותר."' },
+  { phase:6, ll:[14.65,120.5],  c:'#ffaa00', tlabel:'Manila / Bataan',     label:'צעדת המוות של בטאאן 1942',       body:'60,000–80,000 שבויים פיליפינים ואמריקאים נאלצו לצעוד 105 ק"מ. אלפים מתו מתשישות, מחלות ואלימות.' },
+  { phase:6, ll:[16.8,96.2],    c:'#ffaa00', tlabel:'Rangoon 1942',        label:'נפילת רנגון 1942',               body:'בירת בורמה נפלה במרץ 1942. שער ליפן להגיע לגבול הודו הבריטית.' },
+  { phase:6, ll:[-6.2,106.8],   c:'#ffaa00', tlabel:'Batavia (Jakarta)',   label:'בטאוויה (ג\'קרטה) 1942',         body:'מרכז הודו המזרחית ההולנדית נפל במרץ 1942. שדות הנפט עברו לידי יפן.' },
+  { phase:6, ll:[28.2,-177.4],  c:'#4488ff', tlabel:'Midway — Turning Point', label:'קרב מידוויי — יונ\' 1942',   body:'נקודת המפנה. יפן איבדה 4 נושאות מטוסים ומעל 3,000 חיילים. מעולם לא שוחזרה היוזמה האסטרטגית.', sz:13 },
+  { phase:6, ll:[-8.8,147.2],   c:'#ffaa00', tlabel:'Kokoda Trail 1942',   label:'שביל קוקודה 1942',               body:'ניסיון יפני לחצות את הרי אואן סטנלי לכיבוש פורט מורסבי. נעצר על ידי כוחות אוסטרלים בלחימת ג\'ונגל אכזרית.' },
+  { phase:6, ll:[-9.43,160.04], c:'#ff6600', tlabel:'Guadalcanal 1942',    label:'גואדלקנל 1942–43',               body:'שישה חודשים של קרבות עזים על שדה תעופה בחצי בנייה. התבוסה הקרקעית הגדולה הראשונה של יפן. מכאן מתחיל מסע האיים.' },
+];
+
+const battleMarkers = battles.map(b => {
+  const marker = L.marker(b.ll, { icon: mkIcon(b.c, b.sz||10) })
+    .bindPopup(popup('⚔ קרב', b.label, '<br>'+b.body));
+  marker._battlePhase = b.phase;
+  marker._battleColor = b.c;
+  marker._battleSz    = b.sz || 10;
+  return marker;
+});
+const eventsLayer = L.layerGroup(battleMarkers);
+
+function updateBattlePulse(phaseIdx) {
+  battleMarkers.forEach(m => {
+    const el = m.getElement();
+    if (!el) return;
+    if (m._battlePhase === phaseIdx) {
+      el.classList.add('battle-pulse');
+      el.querySelector('div').style.color = m._battleColor;
+    } else {
+      el.classList.remove('battle-pulse');
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PHASES
+// ═══════════════════════════════════════════════════════════════
+const phases = [
+  {
+    yr: '1868–1894', label: 'תקופת מייג\'י',
+    layers: [L0],
+    fly: { center:[36, 136], zoom:5 },
+    areaLabel: { ll:[36,136], text:'האיים הראשיים של יפן' },
+    era: 'עידן מייג\'י · 1868–1894', title: 'יפן מתעוררת',
+    body: 'לאחר 250 שנות בידוד, רפורמת מייג\'י של 1868 שינתה את יפן מקצה לקצה. מסילות ברזל, טלגרף, צבא וחיל ים מודרניים — הכול נבנה בדור אחד. ב-1890 כבר הייתה ליפן חוקה, פרלמנט ושאיפות שלא יכלו עוד להיבלם.',
+    stats: [{ v:'1868', l:'תחילת מייג\'י'}, {v:'180k', l:'גודל הצבא 1894'}, {v:'~50yr', l:'מהפכת המודרניזציה'}]
+  },
+  {
+    yr: '1894–1895', label: 'מלחמת סין-יפן',
+    layers: [L0, L1],
+    fly: { center:[23, 121], zoom:6 },
+    areaLabel: { ll:[23.5,121], text:'טייוואן — נרכשה 1895' },
+    era: 'מלחמת סין-יפן הראשונה · 1894–95', title: 'מדהים את העולם',
+    body: 'יפן ריסקה את שושלת צ\'ינג בשמונה חודשים בלבד — המדינות המערביות, שדחו את יפן כמעצמה שולית, נדהמו. רכשה את טייוואן ואת פנגחו, וכפתה על סין להכיר בעצמאות קוריאה (תחת חסות יפן). מעצמה פסיפית חדשה נולדה.',
+    stats: [{ v:'1895', l:'רכישת טייוואן'}, {v:'8 חודשים', l:'משך המלחמה'}, {v:'150M$', l:'פיצויים שנגבו'}]
+  },
+  {
+    yr: '1904–1905', label: 'מלחמת רוסיה-יפן',
+    layers: [L0, L1, L2],
+    fly: { center:[48, 142], zoom:5 },
+    areaLabel: { ll:[48.5,142], text:'דרום סחלין — נרכש 1905' },
+    era: 'מלחמת רוסיה-יפן · 1904–05', title: 'הביסה מעצמה אירופאית',
+    body: 'האדמירל טוגו השמיד את הצי הרוסי הבלטי במצר צושימה — הניצחון הימי הגדול ביותר מאז טרפלגר. מדינה אסיאתית הביסה מעצמה אירופאית גדולה לראשונה בהיסטוריה המודרנית. יפן רכשה את דרום סחלין ואת הדומיננטיות על קוריאה.',
+    stats: [{ v:'1905', l:'הסכם פורטסמות\''}, {v:'ראשונה', l:'ניצחון אסיאתי על אירופה'}, {v:'100k+', l:'נפגעים (שני הצדדים)'}]
+  },
+  {
+    yr: '1910–1920', label: 'קוריאה ורכישות מלה"ע א\'',
+    layers: [L0, L1, L2, L3],
+    fly: { center:[36, 127.5], zoom:5 },
+    areaLabel: { ll:[36.5,127.5], text:'קוריאה — סופחה 1910' },
+    era: 'גיבוש האימפריה · 1910–1920', title: 'האימפריה מתגבשת',
+    body: 'קוריאה סופחה רשמית ב-1910, תוך סיום שושלת צ\'וסון בת 500 השנה. יפן נכנסה למלחמת העולם הראשונה לצד בעלות הברית — תפסה שטחים גרמניים בפסיפיק. "21 הדרישות" (1915) כפו על סין לקבל את הדומיננטיות היפנית. ועידת פריז (1919) דחתה את הצעת שוויון הגזעים של יפן.',
+    stats: [{ v:'1910', l:'סיפוח קוריאה'}, {v:'13M', l:'קוריאנים תחת שלטון'}, {v:'3', l:'קבוצות איים שנרכשו'}]
+  },
+  {
+    yr: '1931–1937', label: 'אירוע מנצ\'וריה',
+    layers: [L0, L1, L2, L3, L4],
+    fly: { center:[46, 128], zoom:4 },
+    areaLabel: { ll:[46.5,128], text:'מנצ\'וריה (מנצ\'וקו) — נכבשה 1931' },
+    era: 'משבר מנצ\'וריה · 1931–1937', title: 'הארמייה הקוואנטונגית פועלת לבדה',
+    body: 'קצינים סוררים ביימו את "אירוע מוקדן" — כבשו את כל מנצ\'וריה תוך חודשים ללא אישור מטוקיו. נוצרה מדינת הבובה מנצ\'וקו. כאשר חבר הלאומים גינה את המהלך — יפן פשוט פרשה מהארגון.',
+    stats: [{ v:'1932', l:'הקמת מנצ\'וקו'}, {v:'30M', l:'אוכלוסייה תחת שליטה'}, {v:'1933', l:'פרישה מחבר הלאומים'}]
+  },
+  {
+    yr: '1937–1941', label: 'מלחמת סין',
+    layers: [L0, L1, L2, L3, L4, L5],
+    fly: { center:[32, 114], zoom:4 },
+    areaLabel: { ll:[35, 114], text:'מרכז וצפון סין — נכבשו 1937–1941' },
+    era: 'מלחמת סין-יפן השנייה · 1937–1941', title: 'הביצה הסינית',
+    body: '"אירוע גשר מרקו פולו" הצית מלחמה שיפן ציפתה לסיים תוך שלושה חודשים. סין המשיכה להילחם. יפן כבשה את הערים הגדולות אך לא הצליחה להכריע. טבח נאנג\'ינג (דצמבר 1937) זעזע את העולם. יפן החלה להביט דרומה — אחר משאבי הנפט.',
+    stats: [{ v:'1937', l:'פרוץ המלחמה'}, {v:'~300k', l:'קורבנות נאנג\'ינג'}, {v:'4 שנים', l:'קיפאון'}]
+  },
+  {
+    yr: '1941–1942', label: 'שיא ההתפשטות',
+    layers: [L0, L1, L2, L3, L4, L5, L6],
+    fly: { center:[15, 130], zoom:3 },
+    areaLabel: { ll:[20, 130], text:'שיא האימפריה היפנית — 8 מיליון קמ"ר' },
+    era: 'מלחמת האוקיינוס השקט · שיא 1941–1942', title: '8 מיליון קמ"ר — ספרת השגשוג המשותף',
+    body: 'מהאיים האלאוטיאניים בצפון עד קרבת אוסטרליה; מגבול הודו-בורמה במערב עד מרכז האוקיינוס השקט. תוך שישה חודשים כבשה יפן מה שאירופה לקחה מאות שנים לכנוע. נקודת המפנה: קרב מידוויי, יוני 1942 — ממנו לא שוחזרה יפן לעולם.',
+    stats: [{ v:'8M קמ"ר', l:'שטח שנשלט'}, {v:'450M', l:'אנשים תחת שלטון'}, {v:'יוני 1942', l:'מידוויי — נקודת המפנה'}]
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// BUILD TIMELINE
+// ═══════════════════════════════════════════════════════════════
+const track = document.getElementById('tlTrack');
+phases.forEach((p, i) => {
+  const btn = document.createElement('button');
+  btn.className = 'phase-btn' + (i===0?' active':'');
+  btn.innerHTML = `<span class="yr">${p.yr}</span>${p.label}`;
+  btn.onclick = () => showPhase(i);
+  track.appendChild(btn);
+});
+
+// ═══════════════════════════════════════════════════════════════
+// LEGEND TOGGLE
+// ═══════════════════════════════════════════════════════════════
+function toggleLegend() {
+  const panel = document.getElementById('legend');
+  const btn   = document.getElementById('legendToggle');
+  const open  = panel.style.display === 'block';
+  panel.style.display = open ? 'none' : 'block';
+  btn.classList.toggle('open', !open);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AREA LABEL (spotlight label shown on map per phase)
+// ═══════════════════════════════════════════════════════════════
+let areaLabelMarker = null;
+
+function showAreaLabel(ll, text) {
+  if (areaLabelMarker) map.removeLayer(areaLabelMarker);
+  areaLabelMarker = L.marker(ll, {
+    icon: L.divIcon({
+      html: `<div class="area-spotlight">${text}</div>`,
+      className: '',
+      iconAnchor: [0, 0]
+    }),
+    interactive: false,
+    zIndexOffset: 500
+  }).addTo(map);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SHOW PHASE
+// ═══════════════════════════════════════════════════════════════
+let activeLayers = [];
+
+function showPhase(idx) {
+  activeLayers.forEach(l => map.removeLayer(l));
+  map.removeLayer(eventsLayer);
+
+  const p = phases[idx];
+  activeLayers = [...p.layers];
+  activeLayers.forEach(l => l.addTo(map));
+  eventsLayer.addTo(map);
+
+  // עדכון הנצנוץ — אחרי שה-markers על המפה
+  setTimeout(() => updateBattlePulse(idx), 100);
+
+  // Fly to focal area
+  map.flyTo(p.fly.center, p.fly.zoom, { duration: 1.4, easeLinearity: 0.4 });
+
+  // Show area label after fly completes
+  map.once('moveend', () => showAreaLabel(p.areaLabel.ll, p.areaLabel.text));
+
+  const statsHTML = p.stats
+    ? `<div class="stat-row">${p.stats.map(s=>`<div class="stat"><span class="stat-val">${s.v}</span><span class="stat-lab">${s.l}</span></div>`).join('')}</div>`
+    : '';
+
+  document.getElementById('infoBox').innerHTML = `
+    <span class="info-era">${p.era}</span>
+    <h3>${p.title}</h3>
+    <p>${p.body}</p>
+    ${statsHTML}
+  `;
+
+  document.querySelectorAll('.phase-btn').forEach((b, i) => {
+    b.classList.toggle('active', i === idx);
+  });
+}
+
+// ── INIT: מפה נקייה, ללא שלב פעיל ──────────────────────────────
+document.getElementById('infoBox').innerHTML = `
+  <span class="info-era">ברוכים הבאים</span>
+  <h3>האימפריה היפנית 1868–1942</h3>
+  <p>לחץ על אחד מהשלבים בציר הזמן למטה כדי להתחיל את המסע.</p>
+`;
+map.getPane('markerPane').style.zIndex = 700;
+map.getPane('popupPane').style.zIndex = 800;
+
+map.on('popupopen',  function() {
+  document.getElementById('timeline').style.display = 'none';
+  document.getElementById('infoBox').style.display = 'none';
+});
+map.on('popupclose', function() {
+  document.getElementById('timeline').style.display = 'block';
+  document.getElementById('infoBox').style.display = 'block';
+});
+</script>
+</body>
+</html>
